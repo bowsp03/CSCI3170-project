@@ -19,16 +19,14 @@ public class DatabaseConnection {
             System.out.println("Connected to the database!");
 
             Statement stmt = conn.createStatement();
-        // stmt.executeUpdate("CREATE TABLE b " +
-        //         "(UserID VARCHAR(10), " +
-        //         "Password VARCHAR(8))");
+            // stmt.executeUpdate("CREATE TABLE b " +
+            // "(UserID VARCHAR(10), " +
+            // "Password VARCHAR(8))");
 
-        ResultSet rs = stmt.executeQuery("select * from user_tables");
-        while (rs.next()){
-            System.out.println(rs.getString(1));
+            ResultSet rs = stmt.executeQuery("select * from user_tables");
+            while (rs.next()) {
+                System.out.println(rs.getString(1));
             }
-        
-
 
             start();
             scanner.close();
@@ -104,7 +102,7 @@ public class DatabaseConnection {
     }
 
     private static void createTables() {
-        
+
         return;
     }
 
@@ -121,10 +119,84 @@ public class DatabaseConnection {
     }
 
     private static void salesperson() {
+        while (true) {
+            System.out.println("""
+                    -----Operations for salesperson menu-----
+                    What kinds of operation would you like to perform?
+                    1. Search for parts
+                    2. Sell a part
+                    3. Return to the main menu
+                    """);
+            switch (scanInput()) {
+                case "1":
+                    searchPart();
+                    break;
+                case "2":
+                    sellPart();
+                    break;
+                case "3":
+                    start();
+                    break;
+                default:
+                    System.out.println("Usage: 1/2/3");
+            }
+        }
+    }
+
+    private static void searchPart() {
+        return;
+    }
+
+    private static void sellPart() {
         return;
     }
 
     private static void manager() {
+        while (true) {
+            System.out.println("""
+                    -----Operations for manager menu-----
+                    What kinds of operation would you like to perform?
+                    1. List all salespersons
+                    2. Count the no. of sales records of each salesperson under a specific range on years of experience
+                    3. Show the total sales valur of each manufacturer
+                    4.Show the N most popular part
+                    5. Return to the main menu
+                    """);
+            switch (scanInput()) {
+                case "1":
+                    listSalesPersons();
+                    break;
+                case "2":
+                    countSalesRecord();
+                    break;
+                case "3":
+                    showManufacturer();
+                    break;
+                case "4":
+                    showNMostpopular();
+                    break;
+                case "5":
+                    start();
+                    break;
+                default:
+                    System.out.println("Usage: 1/2/3/4/5");
+            }
+        }
+    }
+
+    private static void listSalesPersons() {
+        return;
+    }
+
+    private static void countSalesRecord() {
+        return;
+    }
+
+    private static void showManufacturer() {
+        return;
+    }
+
+    private static void showNMostpopular() {
         return;
     }
 }
