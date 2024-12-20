@@ -27,17 +27,6 @@ public class DatabaseConnection {
 
             conn = connection;
 
-            // stmt.executeUpdate("CREATE TABLE b " +
-            // "(UserID VARCHAR(10), " +
-            // "Password VARCHAR(8))");
-            try {
-                System.out.println("Getting all columns from tables");
-                callsql("select * from user_tables");
-                System.out.println("Done getting all columns from tables");
-            } catch (SQLException e) {
-                System.out.println(e);
-            }
-
             System.out.println("Welcome to sales system! \n\n");
             start();
             scanner.close();
@@ -53,14 +42,14 @@ public class DatabaseConnection {
         return input;
     }
 
-    private static void callsql(String sql) throws SQLException {
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(sql);
-        while (rs.next()) {
-            System.out.println(rs.getString(1));
-        }
-        return;
-    }
+    // private static void callsql(String sql) throws SQLException {
+    //     Statement stmt = conn.createStatement();
+    //     ResultSet rs = stmt.executeQuery(sql);
+    //     while (rs.next()) {
+    //         System.out.println(rs.getString(1));
+    //     }
+    //     return;
+    // }
 
     private static ResultSet getsqlResult(String sql) throws SQLException {
         Statement stmt = conn.createStatement();
@@ -89,6 +78,9 @@ public class DatabaseConnection {
                     break;
                 case "4":
                     return;
+                case "custom":
+                    executeCustomSQL();
+                    break;
                 default:
                     System.out.println("Usage: 1/2/3/4");
                     continue;
@@ -104,7 +96,7 @@ public class DatabaseConnection {
                     "2. Delete all tables\n" +
                     "3. Load from datafile\n" +
                     "4. Show content of a table\n" +
-                    "5. Return to the main menu\n");
+                    "5. Return to the main menu");
 
             switch (scanInput("Enter Your Choice: ")) {
                 case "1":
@@ -141,7 +133,7 @@ public class DatabaseConnection {
             while (fileScanner.hasNext()) {
                 String sql = fileScanner.next().trim();
                 if (!sql.isEmpty()) {
-                    callsql(sql);
+                    getsqlResult(sql);
                 }
             }
             fileScanner.close();
@@ -157,7 +149,7 @@ public class DatabaseConnection {
             System.out.println("Processing...");
             for (String table : tables) {
                 try {
-                    callsql("DROP TABLE " + table + " CASCADE CONSTRAINTS");
+                    getsqlResult("DROP TABLE " + table + " CASCADE CONSTRAINTS");
                     System.out.println("Table " + table + " dropped successfully.");
                 } catch (SQLException e) {
                     System.out.println("Could not drop table " + table + ": " + e.getMessage());
@@ -186,7 +178,7 @@ public class DatabaseConnection {
                 }
                 System.out.println("Loaded data from category.txt successfully.");
             }
-    
+
             // Load manufacturer.txt
             try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/manufacturer.txt"))) {
                 String sql = "INSERT INTO manufacturer (mID, mName, mAddress, mPhoneNumber) VALUES (?, ?, ?, ?)";
@@ -202,11 +194,11 @@ public class DatabaseConnection {
                 }
                 System.out.println("Loaded data from manufacturer.txt successfully.");
             }
-    
+
             // Load part.txt
             try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/part.txt"))) {
                 String sql = "INSERT INTO part (pID, pName, pPrice, mID, cID, pWarrantyPeriod, pAvailableQuantity) "
-                           + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 String line;
                 while ((line = br.readLine()) != null) {
@@ -222,11 +214,11 @@ public class DatabaseConnection {
                 }
                 System.out.println("Loaded data from part.txt successfully.");
             }
-    
+
             // Load salesperson.txt
             try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/salesperson.txt"))) {
                 String sql = "INSERT INTO salesperson (sID, sName, sAddress, sPhoneNumber, sExperience) "
-                           + "VALUES (?, ?, ?, ?, ?)";
+                        + "VALUES (?, ?, ?, ?, ?)";
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 String line;
                 while ((line = br.readLine()) != null) {
@@ -240,7 +232,7 @@ public class DatabaseConnection {
                 }
                 System.out.println("Loaded data from salesperson.txt successfully.");
             }
-    
+
             // Load transaction.txt
             try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/transaction.txt"))) {
                 String sql = "INSERT INTO transaction (tID, pID, sID, tDate) VALUES (?, ?, ?, TO_DATE(?, 'DD/MM/YYYY'))";
@@ -256,10 +248,10 @@ public class DatabaseConnection {
                 }
                 System.out.println("Loaded data from transaction.txt successfully.");
             }
-    
+
             conn.commit(); // Commit transaction
             System.out.println("Data is inputted to the database!");
-    
+
         } catch (IOException e) {
             System.out.println("File I/O Error: " + e.getMessage());
             rollbackTransaction();
@@ -277,7 +269,7 @@ public class DatabaseConnection {
             }
         }
     }
-    
+
     private static void rollbackTransaction() {
         try {
             conn.rollback();
@@ -286,9 +278,10 @@ public class DatabaseConnection {
             System.out.println("Error during rollback: " + e.getMessage());
         }
     }
+
     private static void showContent() {
         String tableName = scanInput("Which table would you like to show: ").trim().toUpperCase();
-    
+
         // Optional: Validate if the table name is one of the expected tables
         String[] validTables = { "CATEGORY", "MANUFACTURER", "PART", "SALESPERSON", "TRANSACTION" };
         boolean isValidTable = false;
@@ -298,7 +291,7 @@ public class DatabaseConnection {
                 break;
             }
         }
-    
+
         if (!isValidTable) {
             System.out.println("Invalid table name. Please choose from the following tables:");
             for (String validTable : validTables) {
@@ -306,17 +299,17 @@ public class DatabaseConnection {
             }
             return;
         }
-    
+
         String sql = "SELECT * FROM " + tableName;
-    
+
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-    
+                ResultSet rs = stmt.executeQuery(sql)) {
+
             // Get metadata about the table
             ResultSetMetaData rsmd = rs.getMetaData();
             int columnCount = rsmd.getColumnCount();
-            
-            System.out.println("Content of table "+tableName+":");
+
+            System.out.println("Content of table " + tableName + ":");
 
             // Print column headers
             for (int i = 1; i <= columnCount; i++) {
@@ -335,12 +328,11 @@ public class DatabaseConnection {
                 }
                 System.out.println("|");
             }
-    
+
         } catch (SQLException e) {
             System.out.println("Error retrieving data from table '" + tableName + "': " + e.getMessage());
         }
     }
-    
 
     private static void salesperson() throws SQLException {
         while (true) {
@@ -348,7 +340,7 @@ public class DatabaseConnection {
                     "What kinds of operation would you like to perform?\n" +
                     "1. Search for parts\n" +
                     "2. Sell a part\n" +
-                    "3. Return to the main menu\n");
+                    "3. Return to the main menu");
             switch (scanInput("Enter Your Choice: ")) {
                 case "1":
                     searchPart();
@@ -369,65 +361,140 @@ public class DatabaseConnection {
             System.out.println("Choose the search criterion\n" +
                     "1. Part Name\n" +
                     "2. Manufacturer Name\n");
+
+                ResultSet rs;
             switch (scanInput("Choose the search criterion: ")) {
                 case "1":
                     // part name
                     String keyword = scanInput("Type in Search Keyword: ");
                     String ordering = scanInput("Choose ordering:\n" +
                             "1. By price, ascending order\n" +
-                            "2. By price, desending order\n");
+                            "2. By price, desending order\n" + 
+                            "Choose the search criterion: ");
 
-                    String sql = "SELECT * FROM part" +
-                            "Where pName LIKE '%" + keyword + "%'" +
-                            "ORDER BY pPrice " + (ordering.equals("1") ? "ASC" : "DESC");
+                            String sql = "SELECT p.pID, p.pName, m.mName, c.cName, p.pAvailableQuantity, " +
+                            "p.pWarrantyPeriod, p.pPrice " +
+                            "FROM part p " +
+                            "JOIN manufacturer m ON p.mID = m.mID " +
+                            "JOIN category c ON p.cID = c.cID " +
+                            "WHERE p.pName LIKE '%" + keyword + "%' " +
+                            "ORDER BY p.pPrice " + (ordering.equals("1") ? "ASC" : "DESC");
+               
 
-                    callsql(sql);
+                    //System.out.println(sql);
 
+                    rs = getsqlResult(sql);
+
+                    System.out.println("| ID | Name | Manufacturer | Category | Quantity | Warranty | Price |");
+                    while (rs.next()) {
+                        int id = rs.getInt("pID");
+                        String name = rs.getString("pName");
+                        String manufacturer = rs.getString("mName");
+                        String category = rs.getString("cName");
+                        int quantity = rs.getInt("pAvailableQuantity");
+                        int warranty = rs.getInt("pWarrantyPeriod");
+                        int price = rs.getInt("pPrice");
+
+                        System.out.printf("| %d | %s | %s | %s | %d | %d | %d |\n",
+                                id, name, manufacturer, category, quantity, warranty, price);
+                    }
+
+                    System.out.println("End of Query\n\n");
                     return;
+
                 case "2":
                     String keyword2 = scanInput("Type in Search Keyword: ");
                     String ordering2 = scanInput("Choose ordering:\n" +
                             "1. By price, ascending order\n" +
-                            "2. By price, desending order\n");
+                            "2. By price, desending order\n"+ 
+                            "Choose the search criterion: ");
 
-                    String sql2 = "SELECT p.*, m.mName " +
+                    String sql2 = "SELECT p.pID, p.pName, m.mName, c.cName, p.pAvailableQuantity, " +
+                            "p.pWarrantyPeriod, p.pPrice " +
                             "FROM part p " +
                             "JOIN manufacturer m ON p.mID = m.mID " +
+                            "JOIN category c ON p.cID = c.cID " +
                             "WHERE m.mName LIKE '%" + keyword2 + "%' " +
                             "ORDER BY p.pPrice " + (ordering2.equals("1") ? "ASC" : "DESC");
 
-                    callsql(sql2);
+                    rs = getsqlResult(sql2);
+
+                    System.out.println("| ID | Name | Manufacturer | Category | Quantity | Warranty | Price |");
+
+                    while (rs.next()) {
+                        int id = rs.getInt("pID");
+                        String name = rs.getString("pName");
+                        String manufacturer = rs.getString("mName");
+                        String category = rs.getString("cName");
+                        int quantity = rs.getInt("pAvailableQuantity");
+                        int warranty = rs.getInt("pWarrantyPeriod");
+                        int price = rs.getInt("pPrice");
+
+                        System.out.printf("| %d | %s | %s | %s | %d | %d | %d |\n",
+                                id, name, manufacturer, category, quantity, warranty, price);
+                    }
+
+                    System.out.println("End of Query\n\n");
 
                     return;
                 default:
-                    System.out.println("Usage: 1/2");
+                    System.out.println("Incorrct input, please try again.");
             }
         }
     }
 
     private static void sellPart() throws SQLException {
-        String part = scanInput("Enter the Part ID : ");
-        String salesperson = scanInput("Enter the Salesperson ID : ");
-
+        String part = scanInput("Enter the Part ID: ");
+        String salesperson = scanInput("Enter the Salesperson ID: ");
+        int tid = generateTID();
+    
+        // Update part quantity
         String updatePartSql = "UPDATE part SET pAvailableQuantity = pAvailableQuantity - 1 " +
                 "WHERE pID = " + part + " AND pAvailableQuantity > 0";
-
-        String insertTransactionSql = "INSERT INTO transaction (pID, sID, tDate) " +
-                "VALUES (" + part + ", " + salesperson + ", CURRENT_DATE)";
-
+    
+        // Insert transaction
+        String insertTransactionSql = "INSERT INTO transaction (tID, pID, sID, tDate) " +
+                "VALUES (" + tid + ", " + part + ", " + salesperson + ", CURRENT_DATE)";
+    
+        // Fetch part details after update
         String selectPartSql = "SELECT pName, pAvailableQuantity FROM part WHERE pID = " + part;
-
-        callsql(updatePartSql);
-        callsql(insertTransactionSql);
-
-        ResultSet rs = getsqlResult(selectPartSql);
-        if (rs.next()) {
-            String productName = rs.getString("pName");
-            int remainingQuantity = rs.getInt("pAvailableQuantity");
-            System.out.println("Product: " + productName + ", Remaining Quantity: " + remainingQuantity);
+    
+        try {
+            // Execute update query
+            getsqlResult(updatePartSql);
+    
+            // Execute insert query
+            getsqlResult(insertTransactionSql);
+    
+            // Retrieve and display part details
+            ResultSet rs = getsqlResult(selectPartSql);
+            if (rs.next()) {
+                String productName = rs.getString("pName");
+                int remainingQuantity = rs.getInt("pAvailableQuantity");
+                System.out.println("Product: " + productName + ", Remaining Quantity: " + remainingQuantity);
+            } else {
+                System.out.println("No product found with the specified Part ID.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
         return;
+    }
+
+    private static int generateTID() {
+        int nextTid = 1; // Default for the first transaction
+        String sql = "SELECT MAX(tID) AS maxTid FROM transaction";
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                nextTid = rs.getInt("maxTid") + 1; // Increment the largest `tID`
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return nextTid;
     }
 
     private static void manager() {
@@ -435,10 +502,9 @@ public class DatabaseConnection {
             System.out.println("-----Operations for manager menu-----\n" +
                     "What kinds of operation would you like to perform?\n" +
                     "1. List all salespersons\n" +
-                    "2. Count the no. of sales records of each salesperson under a specific range on years of experience\n"
-                    +
+                    "2. Count the no. of sales records of each salesperson under a specific range on years of experience\n" +
                     "3. Show the total sales valur of each manufacturer\n" +
-                    "4.Show the N most popular part\n" +
+                    "4. Show the N most popular part\n" +
                     "5. Return to the main menu\n");
             switch (scanInput("Enter Your Choice: ")) {
                 case "1":
@@ -476,4 +542,47 @@ public class DatabaseConnection {
     private static void showNMostpopular() {
         return;
     }
+
+    private static void executeCustomSQL() {
+        Scanner scanner = new Scanner(System.in);
+    
+        try {
+            System.out.print("Enter your SQL query: ");
+            String sql = scanner.nextLine();
+    
+            Statement stmt = conn.createStatement();
+    
+            // Determine if the query is a SELECT or non-SELECT statement
+            if (sql.trim().toUpperCase().startsWith("SELECT")) {
+                ResultSet rs = stmt.executeQuery(sql);
+                ResultSetMetaData metaData = rs.getMetaData();
+                int columnCount = metaData.getColumnCount();
+    
+                // Print column headers
+                for (int i = 1; i <= columnCount; i++) {
+                    System.out.print(metaData.getColumnLabel(i) + "\t");
+                }
+                System.out.println();
+    
+                // Print rows
+                while (rs.next()) {
+                    for (int i = 1; i <= columnCount; i++) {
+                        System.out.print(rs.getString(i) + "\t");
+                    }
+                    System.out.println();
+                }
+    
+                rs.close();
+            } else {
+                // Handle non-SELECT queries
+                int rowsAffected = stmt.executeUpdate(sql);
+                System.out.println("Query executed successfully. Rows affected: " + rowsAffected);
+            }
+    
+            stmt.close();
+        } catch (SQLException e) {
+            System.err.println("SQL Error: " + e.getMessage());
+        }
+    }
+    
 }
