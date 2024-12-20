@@ -1,7 +1,11 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Scanner;
@@ -26,8 +30,14 @@ public class DatabaseConnection {
             // stmt.executeUpdate("CREATE TABLE b " +
             // "(UserID VARCHAR(10), " +
             // "Password VARCHAR(8))");
+            try {
+                System.out.println("Getting all columns from tables");
+                callsql("select * from user_tables");
+                System.out.println("Done getting all columns from tables");
+            } catch (SQLException e) {
+                System.out.println(e);
+            }
 
-            callsql("select * from user_tables");
             System.out.println("Welcome to sales system! \n\n");
             start();
             scanner.close();
@@ -119,21 +129,218 @@ public class DatabaseConnection {
     }
 
     private static void createTables() {
+        System.out.println("Processing...");
+        try {
+            java.io.InputStream inputStream = DatabaseConnection.class.getResourceAsStream("/Data/create_table");
+            if (inputStream == null) {
+                System.out.println("Could not find the file /Data/create_table.");
+                return;
+            }
 
-        return;
+            java.util.Scanner fileScanner = new java.util.Scanner(inputStream).useDelimiter(";");
+            while (fileScanner.hasNext()) {
+                String sql = fileScanner.next().trim();
+                if (!sql.isEmpty()) {
+                    callsql(sql);
+                }
+            }
+            fileScanner.close();
+            System.out.println("Done! Database is initialized");
+        } catch (Exception e) {
+            System.out.println("Error occurred while creating tables: " + e.getMessage());
+        }
     }
 
     private static void deleteTables() {
-        return;
+        try {
+            String[] tables = { "transaction", "salesperson", "part", "category", "manufacturer" };
+            System.out.println("Processing...");
+            for (String table : tables) {
+                try {
+                    callsql("DROP TABLE " + table + " CASCADE CONSTRAINTS");
+                    System.out.println("Table " + table + " dropped successfully.");
+                } catch (SQLException e) {
+                    System.out.println("Could not drop table " + table + ": " + e.getMessage());
+                }
+            }
+            System.out.print("Done! Database is removed!");
+        } catch (Exception e) {
+            System.out.println("Error occurred while dropping tables: " + e.getMessage());
+        }
     }
 
     private static void loadDatafile() {
-        return;
+        String folderPath = scanInput("Type in the Source Data Folder Path: ").trim();
+        System.out.println("Processing...");
+        try {
+            conn.setAutoCommit(false);
+            try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/category.txt"))) {
+                String sql = "INSERT INTO category (cID, cName) VALUES (?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] parts = line.split("\t");
+                    pstmt.setInt(1, Integer.parseInt(parts[0].trim()));
+                    pstmt.setString(2, parts[1].trim());
+                    pstmt.executeUpdate();
+                }
+                System.out.println("Loaded data from category.txt successfully.");
+            }
+    
+            // Load manufacturer.txt
+            try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/manufacturer.txt"))) {
+                String sql = "INSERT INTO manufacturer (mID, mName, mAddress, mPhoneNumber) VALUES (?, ?, ?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] parts = line.split("\t");
+                    pstmt.setInt(1, Integer.parseInt(parts[0].trim()));
+                    pstmt.setString(2, parts[1].trim());
+                    pstmt.setString(3, parts[2].trim());
+                    pstmt.setLong(4, Long.parseLong(parts[3].trim()));
+                    pstmt.executeUpdate();
+                }
+                System.out.println("Loaded data from manufacturer.txt successfully.");
+            }
+    
+            // Load part.txt
+            try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/part.txt"))) {
+                String sql = "INSERT INTO part (pID, pName, pPrice, mID, cID, pWarrantyPeriod, pAvailableQuantity) "
+                           + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] parts = line.split("\t");
+                    pstmt.setInt(1, Integer.parseInt(parts[0].trim()));
+                    pstmt.setString(2, parts[1].trim());
+                    pstmt.setInt(3, Integer.parseInt(parts[2].trim()));
+                    pstmt.setInt(4, Integer.parseInt(parts[3].trim()));
+                    pstmt.setInt(5, Integer.parseInt(parts[4].trim()));
+                    pstmt.setInt(6, Integer.parseInt(parts[5].trim()));
+                    pstmt.setInt(7, Integer.parseInt(parts[6].trim()));
+                    pstmt.executeUpdate();
+                }
+                System.out.println("Loaded data from part.txt successfully.");
+            }
+    
+            // Load salesperson.txt
+            try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/salesperson.txt"))) {
+                String sql = "INSERT INTO salesperson (sID, sName, sAddress, sPhoneNumber, sExperience) "
+                           + "VALUES (?, ?, ?, ?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] parts = line.split("\t");
+                    pstmt.setInt(1, Integer.parseInt(parts[0].trim()));
+                    pstmt.setString(2, parts[1].trim());
+                    pstmt.setString(3, parts[2].trim());
+                    pstmt.setLong(4, Long.parseLong(parts[3].trim()));
+                    pstmt.setInt(5, Integer.parseInt(parts[4].trim()));
+                    pstmt.executeUpdate();
+                }
+                System.out.println("Loaded data from salesperson.txt successfully.");
+            }
+    
+            // Load transaction.txt
+            try (BufferedReader br = new BufferedReader(new FileReader(folderPath + "/transaction.txt"))) {
+                String sql = "INSERT INTO transaction (tID, pID, sID, tDate) VALUES (?, ?, ?, TO_DATE(?, 'DD/MM/YYYY'))";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] parts = line.split("\t");
+                    pstmt.setInt(1, Integer.parseInt(parts[0].trim()));
+                    pstmt.setInt(2, Integer.parseInt(parts[1].trim()));
+                    pstmt.setInt(3, Integer.parseInt(parts[2].trim()));
+                    pstmt.setString(4, parts[3].trim()); // Date remains in DD/MM/YYYY format
+                    pstmt.executeUpdate();
+                }
+                System.out.println("Loaded data from transaction.txt successfully.");
+            }
+    
+            conn.commit(); // Commit transaction
+            System.out.println("Data is inputted to the database!");
+    
+        } catch (IOException e) {
+            System.out.println("File I/O Error: " + e.getMessage());
+            rollbackTransaction();
+        } catch (SQLException e) {
+            System.out.println("SQL Error: " + e.getMessage());
+            rollbackTransaction();
+        } catch (NumberFormatException e) {
+            System.out.println("Data Format Error: " + e.getMessage());
+            rollbackTransaction();
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                System.out.println("Error re-enabling auto-commit: " + e.getMessage());
+            }
+        }
     }
-
+    
+    private static void rollbackTransaction() {
+        try {
+            conn.rollback();
+            System.out.println("Transaction rolled back due to error.");
+        } catch (SQLException e) {
+            System.out.println("Error during rollback: " + e.getMessage());
+        }
+    }
     private static void showContent() {
-        return;
+        String tableName = scanInput("Which table would you like to show: ").trim().toUpperCase();
+    
+        // Optional: Validate if the table name is one of the expected tables
+        String[] validTables = { "CATEGORY", "MANUFACTURER", "PART", "SALESPERSON", "TRANSACTION" };
+        boolean isValidTable = false;
+        for (String validTable : validTables) {
+            if (validTable.equalsIgnoreCase(tableName)) {
+                isValidTable = true;
+                break;
+            }
+        }
+    
+        if (!isValidTable) {
+            System.out.println("Invalid table name. Please choose from the following tables:");
+            for (String validTable : validTables) {
+                System.out.println("- " + validTable);
+            }
+            return;
+        }
+    
+        String sql = "SELECT * FROM " + tableName;
+    
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+    
+            // Get metadata about the table
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int columnCount = rsmd.getColumnCount();
+            
+            System.out.println("Content of table "+tableName+":");
+
+            // Print column headers
+            for (int i = 1; i <= columnCount; i++) {
+                System.out.print("| " + rsmd.getColumnName(i) + " ");
+            }
+            System.out.println("|"); // Close the header line
+
+            // Print rows
+            while (rs.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    String value = rs.getString(i);
+                    if (value == null) {
+                        value = "NULL"; // Handle null values
+                    }
+                    System.out.print("| " + value + " ");
+                }
+                System.out.println("|");
+            }
+    
+        } catch (SQLException e) {
+            System.out.println("Error retrieving data from table '" + tableName + "': " + e.getMessage());
+        }
     }
+    
 
     private static void salesperson() throws SQLException {
         while (true) {
