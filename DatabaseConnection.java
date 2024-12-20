@@ -528,20 +528,163 @@ public class DatabaseConnection {
     }
 
     private static void listSalesPersons() {
-        return;
+        while (true) {
+            System.out.println("Choose ordering\n" +
+                    "1. By ascending order\n" +
+                    "2. By descending order\n");
+    
+            switch (scanInput("Choose the list ordering: ")) {
+                case "1":
+                    try {
+                        String sql = "SELECT sID, sName, sPhoneNumber, sExperience FROM salesperson " +
+                                "ORDER BY sExperience ASC";
+                        ResultSet rs = getsqlResult(sql);
+    
+                        System.out.println("| ID | Name           | Mobile Phone | Years of Experience |");
+                        while (rs.next()) {
+                            int id = rs.getInt("sID");
+                            String name = rs.getString("sName");
+                            int phoneNumber = rs.getInt("sPhoneNumber");
+                            int experience = rs.getInt("sExperience");
+    
+                            System.out.printf("| %-2d | %-14s | %-12d | %-20d |\n", id, name, phoneNumber, experience);
+                        }
+                        System.out.println("End of Query\n\n");
+                    } catch (SQLException e) {
+                        System.out.println("SQL Error: " + e.getMessage());
+                    }
+                    return;
+    
+                case "2":
+                    try {
+                        String sql = "SELECT sID, sName, sPhoneNumber, sExperience FROM salesperson " +
+                                "ORDER BY sExperience DESC";
+                        ResultSet rs = getsqlResult(sql);
+    
+                        System.out.println("| ID | Name           | Mobile Phone | Years of Experience |");
+                        while (rs.next()) {
+                            int id = rs.getInt("sID");
+                            String name = rs.getString("sName");
+                            int phoneNumber = rs.getInt("sPhoneNumber");
+                            int experience = rs.getInt("sExperience");
+    
+                            System.out.printf("| %-2d | %-14s | %-12d | %-20d |\n", id, name, phoneNumber, experience);
+                        }
+                        System.out.println("End of Query\n\n");
+                    } catch (SQLException e) {
+                        System.out.println("SQL Error: " + e.getMessage());
+                    }
+                    return;
+    
+                default:
+                    System.out.println("Incorrect input, please try again.");
+            }
+        }
     }
+    
 
     private static void countSalesRecord() {
-        return;
+        while (true) {
+            try {
+                System.out.print("Enter minimum years of experience: ");
+                int minYears = Integer.parseInt(scanInput(""));
+                System.out.print("Enter maximum years of experience: ");
+                int maxYears = Integer.parseInt(scanInput(""));
+    
+                String sql = "SELECT s.sID, s.sName, s.sExperience, COUNT(t.tID) AS TransactionCount " +
+                        "FROM salesperson s " +
+                        "LEFT JOIN transaction t ON s.sID = t.sID " +
+                        "WHERE s.sExperience BETWEEN ? AND ? " +
+                        "GROUP BY s.sID, s.sName, s.sExperience " +
+                        "ORDER BY s.sID DESC";
+    
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1, minYears);
+                pstmt.setInt(2, maxYears);
+    
+                ResultSet rs = pstmt.executeQuery();
+    
+                System.out.println("| ID | Name           | Years of Experience | Number of Transactions |");
+                while (rs.next()) {
+                    int id = rs.getInt("sID");
+                    String name = rs.getString("sName");
+                    int experience = rs.getInt("sExperience");
+                    int transactionCount = rs.getInt("TransactionCount");
+    
+                    System.out.printf("| %-2d | %-14s | %-20d | %-23d |\n", id, name, experience, transactionCount);
+                }
+                System.out.println("End of Query\n\n");
+                return;
+            } catch (SQLException | NumberFormatException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
     }
+    
 
     private static void showManufacturer() {
-        return;
+        try {
+            String sql = "SELECT m.mID, m.mName, SUM(p.pPrice) AS totalsales "
+            + "FROM manufacturer m "
+            + "JOIN part p ON m.mID = p.mID "
+            + "GROUP BY m.mID, m.mName "
+            + "ORDER BY totalsales DESC;";
+                    
+    
+            ResultSet rs = getsqlResult(sql);
+    
+            System.out.println("| Manufacturer ID | Manufacturer Name | Total Sales Value |");
+            while (rs.next()) {
+                int id = rs.getInt("mID");
+                String name = rs.getString("mName");
+                double totalSales = rs.getDouble("TotalSalesValue");
+    
+                System.out.printf("| %-16d | %-18s | %-17.2f |\n", id, name, totalSales);
+            }
+            System.out.println("End of Query\n\n");
+        } catch (SQLException e) {
+            System.out.println("SQL Error: " + e.getMessage());
+        }
     }
+    
 
     private static void showNMostpopular() {
-        return;
+        while (true) {
+            try {
+                System.out.print("Enter the number of parts (N): ");
+                int n = Integer.parseInt(scanInput(""));
+                if (n <= 0) {
+                    System.out.println("N must be greater than 0. Try again.");
+                    continue;
+                }
+    
+                String sql = "SELECT p.pID, p.pName, COUNT(t.tID) AS Transaction FROM part" 
+                       + "LEFT JOIN transaction t ON p.pID = t.tID "
+                       + "GROUP BY p.pID "
+                       + "ORDER BY Transaction DESC;"
+                       + "LIMIT "+ n;
+    
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1, n);
+    
+                ResultSet rs = pstmt.executeQuery();
+    
+                System.out.println("| Part ID | Part Name      | Number of Transactions |");
+                while (rs.next()) {
+                    int id = rs.getInt("pID");
+                    String name = rs.getString("pName");
+                    int transactionCount = rs.getInt("TransactionCount");
+    
+                    System.out.printf("| %-7d | %-14s | %-23d |\n", id, name, transactionCount);
+                }
+                System.out.println("End of Query\n\n");
+                return;
+            } catch (SQLException | NumberFormatException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
     }
+    
 
     private static void executeCustomSQL() {
         Scanner scanner = new Scanner(System.in);
