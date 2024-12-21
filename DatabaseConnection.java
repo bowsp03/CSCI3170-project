@@ -23,11 +23,11 @@ public class DatabaseConnection {
                     url,
                     "h102",
                     "NospIddO");
-            System.out.println("Connected to the database!");
+            //System.out.println("Connected to the database!");
 
             conn = connection;
 
-            System.out.println("Welcome to sales system! \n\n");
+            System.out.println("Welcome to sales system!\n");
             start();
             scanner.close();
             connection.close();
@@ -64,16 +64,19 @@ public class DatabaseConnection {
                     "1. Operations for administator\n" +
                     "2. Operations for salesperson\n" +
                     "3. Operations for manager\n" +
-                    "4. Exit this program\n");
+                    "4. Exit this program");
 
             switch (scanInput("Enter Your Choice: ")) {
                 case "1":
+                    System.out.println();
                     administrator();
                     break;
                 case "2":
+                    System.out.println();
                     salesperson();
                     break;
                 case "3":
+                    System.out.println();
                     manager();
                     break;
                 case "4":
@@ -137,7 +140,7 @@ public class DatabaseConnection {
                 }
             }
             fileScanner.close();
-            System.out.println("Done! Database is initialized");
+            System.out.println("Done! Database is initialized!\n");
         } catch (Exception e) {
             System.out.println("Error occurred while creating tables: " + e.getMessage());
         }
@@ -155,7 +158,7 @@ public class DatabaseConnection {
                     System.out.println("Could not drop table " + table + ": " + e.getMessage());
                 }
             }
-            System.out.print("Done! Database is removed!");
+            System.out.println("Done! Database is removed!\n");
         } catch (Exception e) {
             System.out.println("Error occurred while dropping tables: " + e.getMessage());
         }
@@ -176,7 +179,7 @@ public class DatabaseConnection {
                     pstmt.setString(2, parts[1].trim());
                     pstmt.executeUpdate();
                 }
-                System.out.println("Loaded data from category.txt successfully.");
+                //System.out.println("Loaded data from category.txt successfully.");
             }
 
             // Load manufacturer.txt
@@ -192,7 +195,7 @@ public class DatabaseConnection {
                     pstmt.setLong(4, Long.parseLong(parts[3].trim()));
                     pstmt.executeUpdate();
                 }
-                System.out.println("Loaded data from manufacturer.txt successfully.");
+                //System.out.println("Loaded data from manufacturer.txt successfully.");
             }
 
             // Load part.txt
@@ -212,7 +215,7 @@ public class DatabaseConnection {
                     pstmt.setInt(7, Integer.parseInt(parts[6].trim()));
                     pstmt.executeUpdate();
                 }
-                System.out.println("Loaded data from part.txt successfully.");
+                //System.out.println("Loaded data from part.txt successfully.");
             }
 
             // Load salesperson.txt
@@ -230,7 +233,7 @@ public class DatabaseConnection {
                     pstmt.setInt(5, Integer.parseInt(parts[4].trim()));
                     pstmt.executeUpdate();
                 }
-                System.out.println("Loaded data from salesperson.txt successfully.");
+                //System.out.println("Loaded data from salesperson.txt successfully.");
             }
 
             // Load transaction.txt
@@ -246,11 +249,11 @@ public class DatabaseConnection {
                     pstmt.setString(4, parts[3].trim()); // Date remains in DD/MM/YYYY format
                     pstmt.executeUpdate();
                 }
-                System.out.println("Loaded data from transaction.txt successfully.");
+                //System.out.println("Loaded data from transaction.txt successfully.");
             }
 
             conn.commit(); // Commit transaction
-            System.out.println("Data is inputted to the database!");
+            System.out.println("Data is inputted to the database!\n");
 
         } catch (IOException e) {
             System.out.println("File I/O Error: " + e.getMessage());
@@ -329,6 +332,8 @@ public class DatabaseConnection {
                 System.out.println("|");
             }
 
+            System.out.println("End of Query\n");
+
         } catch (SQLException e) {
             System.out.println("Error retrieving data from table '" + tableName + "': " + e.getMessage());
         }
@@ -399,7 +404,7 @@ public class DatabaseConnection {
                                 id, name, manufacturer, category, quantity, warranty, price);
                     }
 
-                    System.out.println("End of Query\n\n");
+                    System.out.println("End of Query\n");
                     return;
 
                 case "2":
@@ -434,7 +439,7 @@ public class DatabaseConnection {
                                 id, name, manufacturer, category, quantity, warranty, price);
                     }
 
-                    System.out.println("End of Query\n\n");
+                    System.out.println("End of Query\n");
 
                     return;
                 default:
@@ -549,7 +554,7 @@ public class DatabaseConnection {
                     id, name, phone, yoa);
         }
 
-        System.out.println("End of Query\n\n");
+        System.out.println("End of Query\n");
         return; 
     }
 
@@ -578,7 +583,7 @@ public class DatabaseConnection {
                     id, name, exp, numOfTransactions);
         }
     
-        System.out.println("End of Query\n\n");
+        System.out.println("End of Query\n");
     }
     
 
@@ -602,7 +607,7 @@ public class DatabaseConnection {
                     id, name, tsv);
         }
     
-        System.out.println("End of Query\n\n");
+        System.out.println("End of Query\n");
     }
     
 
@@ -627,7 +632,7 @@ public class DatabaseConnection {
             System.out.printf("| %d | %s | %d |\n", id, name, not);
         }
     
-        System.out.println("End of Query\n\n");
+        System.out.println("End of Query\n");
     }
     
 
