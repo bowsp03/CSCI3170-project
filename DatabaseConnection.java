@@ -497,7 +497,7 @@ public class DatabaseConnection {
         return nextTid;
     }
 
-    private static void manager() {
+    private static void manager() throws SQLException {
         while (true) {
             System.out.println("-----Operations for manager menu-----\n" +
                     "What kinds of operation would you like to perform?\n" +
@@ -527,21 +527,109 @@ public class DatabaseConnection {
         }
     }
 
-    private static void listSalesPersons() {
-        return;
+    private static void listSalesPersons() throws SQLException {
+        
+        String ordering = scanInput("Choose ordering:\n" +
+                "1. By ascending order\n" +
+                "2. By desending order\n" + 
+                "Choose the search criterion: ");
+
+        String sql = "SELECT * FROM salesperson ORDER BY sExperience " + (ordering.equals("1") ? "ASC" : "DESC");
+    
+        ResultSet rs = getsqlResult(sql);
+
+        System.out.println("| ID | Name | Mobile Phone | Year of Experience |");
+        while (rs.next()) {
+            int id = rs.getInt("sID");
+            String name = rs.getString("sName");
+            String phone = rs.getString("sPhoneNumber");
+            int yoa = rs.getInt("sExperience");
+
+            System.out.printf("| %d | %s | %s | %d |\n",
+                    id, name, phone, yoa);
+        }
+
+        System.out.println("End of Query\n\n");
+        return; 
     }
 
-    private static void countSalesRecord() {
-        return;
+    private static void countSalesRecord() throws SQLException {
+        String lb = scanInput("Type in the lower bound for years of experience: ");
+        String ub = scanInput("Type in the upper bound for years of experience: ");
+    
+        String sql = "SELECT s.sID, s.sName, s.sExperience, COUNT(t.tID) AS numOfTransactions " +
+                     "FROM salesperson s " +
+                     "LEFT JOIN transaction t ON s.sID = t.sID " +
+                     "WHERE s.sExperience BETWEEN " + lb + " AND " + ub + " " +
+                     "GROUP BY s.sID, s.sName, s.sExperience " +
+                     "ORDER BY s.sID DESC";
+    
+        ResultSet rs = getsqlResult(sql);
+    
+        System.out.println("| ID | Name | Year of Experience | Number of Transactions |");
+    
+        while (rs.next()) {
+            int id = rs.getInt("sID");
+            String name = rs.getString("sName");
+            int exp = rs.getInt("sExperience");
+            int numOfTransactions = rs.getInt("numOfTransactions");
+    
+            System.out.printf("| %d | %s | %d | %d |\n",
+                    id, name, exp, numOfTransactions);
+        }
+    
+        System.out.println("End of Query\n\n");
     }
+    
 
-    private static void showManufacturer() {
-        return;
+    private static void showManufacturer() throws SQLException {
+        String sql = "SELECT m.mID, m.mName, SUM(p.pPrice) AS totalsalesvalue " +
+                     "FROM manufacturer m " +
+                     "JOIN part p ON m.mID = p.mID " +
+                     "JOIN transaction t ON p.pID = t.pID " +
+                     "GROUP BY m.mID, m.mName " +
+                     "ORDER BY totalsalesvalue DESC";
+    
+        ResultSet rs = getsqlResult(sql);
+    
+        System.out.println("| Manufacturer ID | Manufacturer Name | Total Sales Value |");
+        while (rs.next()) {
+            int id = rs.getInt("mID");
+            String name = rs.getString("mName");
+            int tsv = rs.getInt("totalsalesvalue");
+    
+            System.out.printf("| %d | %s | %d |\n",
+                    id, name, tsv);
+        }
+    
+        System.out.println("End of Query\n\n");
     }
+    
 
-    private static void showNMostpopular() {
-        return;
+    private static void showNMostpopular() throws SQLException {
+        String nop = scanInput("Type in the number of parts: ");
+    
+        String sql = "SELECT p.pID, p.pName, COUNT(t.tID) AS tr " +
+        "FROM part p " +
+        "LEFT JOIN transaction t ON p.pID = t.pID " +
+        "GROUP BY p.pID, p.pName " +
+        "ORDER BY tr DESC " +
+        "FETCH FIRST " + nop + " ROWS ONLY";
+    
+        ResultSet rs = getsqlResult(sql);
+    
+        System.out.println("| Part ID | Part Name | No. of Transaction |");
+        while (rs.next()) {
+            int id = rs.getInt("pID");
+            String name = rs.getString("pName");
+            int not = rs.getInt("tr");
+    
+            System.out.printf("| %d | %s | %d |\n", id, name, not);
+        }
+    
+        System.out.println("End of Query\n\n");
     }
+    
 
     private static void executeCustomSQL() {
         Scanner scanner = new Scanner(System.in);
@@ -552,19 +640,16 @@ public class DatabaseConnection {
     
             Statement stmt = conn.createStatement();
     
-            // Determine if the query is a SELECT or non-SELECT statement
             if (sql.trim().toUpperCase().startsWith("SELECT")) {
                 ResultSet rs = stmt.executeQuery(sql);
                 ResultSetMetaData metaData = rs.getMetaData();
                 int columnCount = metaData.getColumnCount();
     
-                // Print column headers
                 for (int i = 1; i <= columnCount; i++) {
                     System.out.print(metaData.getColumnLabel(i) + "\t");
                 }
                 System.out.println();
     
-                // Print rows
                 while (rs.next()) {
                     for (int i = 1; i <= columnCount; i++) {
                         System.out.print(rs.getString(i) + "\t");
@@ -574,7 +659,6 @@ public class DatabaseConnection {
     
                 rs.close();
             } else {
-                // Handle non-SELECT queries
                 int rowsAffected = stmt.executeUpdate(sql);
                 System.out.println("Query executed successfully. Rows affected: " + rowsAffected);
             }
